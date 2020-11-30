@@ -1,0 +1,58 @@
+---
+- name: Setup for the Ansible's Environment
+  hosts: localhost
+  gather_facts: no
+  connection: local
+  become: yes
+  
+  tasks:
+    - name: Add "/etc/ansible/hosts"
+      blockinfile: 
+        path: /etc/ansible/hosts
+        block: |
+          [CentOS]
+          172.31.39.251
+          172.31.43.174
+  
+    - name: Create vim env's directories & files
+      shell: "{{ item }}"
+      with_items:
+        - "mkdir -p /home/ec2-user/.vim/autoload /home/ec2-user/.vim/bundle"
+        - "touch /home/ec2-user/.vimrc"
+        - "touch /home/ec2-user/.bashrc"
+      
+    - name: Install vim-enhanced
+      yum: 
+        name: vim-enhanced
+        state: present
+        
+    - name: Install git
+      yum: 
+        name: git
+        state: present
+        
+    - name: Download pathogen.vim
+      shell: "curl -fLo /home/ec2-user/.vim/autoload/pathogen.vim
+              https://tpo.pe/pathogen.vim"
+      
+    - name: Git clone vim-ansible-yaml
+      git:
+        repo: https://github.com/chase/vim-ansible-yaml.git
+        dest: /home/ec2-user/.vim/bundle/vim-ansible-yaml
+        
+    - name: Configure vimrc
+      lineinfile: 
+        path: /home/ec2-user/.vimrc
+        line: "{{ item }}"
+      with_items:
+        - "set number"
+        - "execute pathogen#infect()"
+        - "syntax on"
+
+    - name: Configure Bashrc
+      lineinfile:   
+        path: /home/ec2-user/.bashrc
+        line: "{{ item }}"
+      with_items:
+        - "alias ans='ansible'"
+        - "alias anp='ansible-playbook'"
